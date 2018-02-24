@@ -37,7 +37,7 @@ public class Start {
 				+" "+ propertiesParser.getAccessNum();
 				
 		System.out.println(command);
-		sshChannelCreator.ssh("paula", "Neversaynever12", "localhost", command);
+		sshChannelCreator.ssh("user", "pass", "ip", command);
 		
 	}
 
@@ -45,7 +45,7 @@ public class Start {
 		
 		//String command = "java Server "+propertiesParser.getServerPort();
 		String command = "cd BulletinBoard/server/;java Server "+propertiesParser.getServerPort();
-		sshChannelCreator.ssh("paula", "Neversaynever12", "localhost", command);
+		sshChannelCreator.ssh("user", "pass", "ip", command);
 		
 	}
 
