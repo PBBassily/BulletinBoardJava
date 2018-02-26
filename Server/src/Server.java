@@ -48,19 +48,18 @@ public class Server {
 	/**
 	 * Return status object containing oVal and sSeq
 	 */
-	public status readVal(int rId) {
+	public status readVal(int rID) {
 		try {
 			valLock.acquire();
 		} catch (InterruptedException e) {
-			System.out.println("Wait to acquire the read lock");
+			System.out.println("=> In server reader " + rID + " will Wait to acquire the value lock");
 		}
 		int sSeqCopy = ++sSeq;
 		int oValCopy = oVal;
 
-		// write into log file
-		String st = String.format("%-10s %-10s %-10s %-10s%n", sSeqCopy, oValCopy, rId, rNum);
+		// write into readers' log file
+		String st = String.format("%-10s %-10s %-10s %-10s%n", sSeqCopy, oValCopy, rID, rNum);
 		writeIntoFile(readersFile, st);
-
 		valLock.release();
 		return new status(oValCopy, sSeqCopy, rNum);
 
@@ -69,17 +68,17 @@ public class Server {
 	/**
 	 * Change the oVal Return sSeq
 	 */
-	public int writeVal(int newVal, int wId) {
+	public int writeVal(int newVal, int wID) {
 		try {
 			valLock.acquire();
 		} catch (InterruptedException e) {
-			System.out.println("wait to acquire the read lock");
+			System.out.println("=> In server writer " + wID + " will Wait to acquire the value lock");
 		}
 		oVal = newVal;
 		int sSeqCopy = ++sSeq;
 
-		// write into log file
-		String st = String.format("%-10s %-10s %-10s%n", sSeqCopy, newVal, wId);
+		// write into writers' log file
+		String st = String.format("%-10s %-10s %-10s%n", sSeqCopy, newVal, wID);
 		writeIntoFile(writersFile, st);
 
 		valLock.release();
@@ -98,30 +97,29 @@ public class Server {
 			fileWriter.flush();
 
 		} catch (IOException e) {
-			System.out.println(e);
+			System.out.println(e + "=> In server , couldn't write into log file");
 		}
 	}
 
 	/**
 	 * 
-	 * @return
+	 * @return current number of readers
 	 */
 	public int incReadersNum() {
 
 		try {
 			rNumLock.acquire();
 		} catch (InterruptedException e) {
-			System.out.println("wait for lock acquire rNum");
+			System.out.println(e + "=> In server wait for rNum lock acquire");
 		}
 		int rNumCopy = ++rNum;
 		rNumLock.release();
 		return rNumCopy;
-
 	}
 
 	/**
 	 * 
-	 * @return
+	 * @return current number of readers
 	 */
 	public int decReadersNum() {
 
@@ -138,30 +136,28 @@ public class Server {
 	/**
 	 * 
 	 * @param args
-	 * @throws IOException
 	 */
 	public static void main(String[] args) {
 
 		Server server = new Server();
 		int serverPortNum = Integer.parseInt(args[0]);
-		System.out.println("port num is " + serverPortNum);
+		System.out.println("=> In server's main thread, port num is " + serverPortNum);
 		int rSeq = 0;
 
 		// start the server
-
 		try {
 			ServerSocket serverSocket = new ServerSocket(serverPortNum);
 
-			System.out.println("server started successfully.");
+			System.out.println("=> In server : server started successfully.");
 
-			// output files
-			readersFile = new BufferedWriter(new FileWriter("Readers") );
+			// logs files
+			readersFile = new BufferedWriter(new FileWriter("Readers"));
 			readersFile.append("Readers\n");
-			readersFile.append(String.format("%-10s %-10s %-10s %-10s%n", "sSeq" ,"oVal", "rId" ,"rNum"));
+			readersFile.append(String.format("%-10s %-10s %-10s %-10s%n", "sSeq", "oVal", "rId", "rNum"));
 
 			writersFile = new BufferedWriter(new FileWriter("Writers"));
 			writersFile.append("Writers\n");
-			writersFile.append(String.format("%-10s %-10s %-10s%n", "sSeq" ,"oVal", "wId"));
+			writersFile.append(String.format("%-10s %-10s %-10s%n", "sSeq", "oVal", "wId"));
 
 			while (true) {
 				System.out.println("waiting for client...");

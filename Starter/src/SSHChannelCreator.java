@@ -7,10 +7,21 @@ import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 
+/**
+ * 
+ * this class creates a ssh channel with another machine
+ * it needs username , password , ip , bash command of the other machine
+ * the default port of ssh is 22
+ * 
+ * 
+ *
+ */
 public class SSHChannelCreator extends Thread {
 
+	// default ssh port 
 	public final int PORT = 22;
 
+	// ssh channel instance variables 
 	private String user ;
 	private String password ;
 	private String host ;
@@ -78,7 +89,7 @@ public class SSHChannelCreator extends Thread {
 
 	@Override
 	public void run() {
-		
+		// ssh on specific machine on another thread not the main one
 		ssh();
 		
 	}

@@ -1,13 +1,11 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.Random;
 
 public class Client {
 
@@ -19,73 +17,65 @@ public class Client {
 		int clientNum = Integer.parseInt(args[3]);
 		int numberOfAccess = Integer.parseInt(args[4]);
 
-		System.out.println("client ID : " + clientNum + "\nserver IP : " + serverIP + "\nserver port :" + serverPortNum
-				+ "\nreader : " + isReader + "\naccessNum : " + numberOfAccess);
+		System.out.println("==> Client" + clientNum + "   started");
 
-		// Open output file
+		// Open log file
 		BufferedWriter fileWriter = null;
 		try {
 			fileWriter = new BufferedWriter(new FileWriter("log" + clientNum));
-
-			if (isReader)
+			if (isReader) {
 				fileWriter.append("Client type: Reader\n");
-			else
-				fileWriter.append("Client type: Writer\n");
-			fileWriter.append("Client Name: " + clientNum + "\n");
-
-			if (isReader)
+				fileWriter.append("Client Name: " + clientNum + "\n");
 				fileWriter.append(String.format("%-10s %-10s %-10s%n", "rSeq", "sSeq", "oVal"));
-			else
+			}
+			else {
+				fileWriter.append("Client type: Writer\n");
+				fileWriter.append("Client Name: " + clientNum + "\n");
 				fileWriter.append(String.format("%-10s %-10s%n", "rSeq", "sSeq"));
+			}	
 		} catch (IOException e) {
-			System.out.println(e + "couldn't open output file");
+			System.out.println(e + "==> Client"+ clientNum +"   couldn't open log file");
 		}
 
-		//
+		// 
 		for (int i = 0; i < numberOfAccess; i++) {
 			Socket socket;
 			try {
 				socket = new Socket(serverIP, serverPortNum);
+				System.out.println("==> Client" + clientNum + "   connected to server");
 
-				System.out.println("==> " + clientNum +"   connected to server successfully.");
-
+				// socket output file writer
 				PrintWriter wtr = new PrintWriter(socket.getOutputStream(), true);
-				BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-				String response;
-
-				// Reader
+				// Send request
 				if (isReader) {
-					// Send Request
 					wtr.println("Read " + clientNum);
-
-					// Read Response
-					response = reader.readLine();
-					System.out.println("==> " + clientNum +"   Message received : " + response);
+					System.out.println("==> Client" + clientNum + "   send : read");
 				}
-				// Writer
+					
 				else {
 					int newVal = clientNum;
-					// Send Request
 					wtr.println("Write " + clientNum + " " + newVal);
-
-					// Read Response
-					response = reader.readLine();
-					System.out.println("==> " + clientNum +"   Message received : " + response);
-
+					System.out.println("==> Client" + clientNum + "   send : write "+ newVal);
 				}
+				
+				// socket input file reader
+				BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				// Read Response
+				String response = reader.readLine();
 				fileWriter.append(response + "\n");
+				System.out.println("==> Client" + clientNum + "   recieved : " + response);
 
 			} catch (UnknownHostException e) {
-				System.out.println(e + "==> " + clientNum +"   couldn't find server host");
+				System.out.println(e + "==> Client" + clientNum + "   couldn't find server host");
 			} catch (IOException e) {
-				System.out.println(e + "==> " + clientNum +"   couldn't write into output file");
+				System.out.println(e + "==> Client" + clientNum + "   problem in accessing socket output file");
 
 			}
 		}
 		try {
 			fileWriter.close();
 		} catch (IOException e) {
-			System.out.println(e + "==> " + clientNum +"   couldn't close output file");
+			System.out.println(e + "==> Client" + clientNum + "   couldn't close log file");
 		}
 
 	}

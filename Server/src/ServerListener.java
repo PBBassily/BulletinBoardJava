@@ -26,7 +26,7 @@ public class ServerListener extends Thread {
 			String requestStr = reader.readLine();
 			String[] req = requestStr.split("\\s", -1);
 
-			System.out.println("=> thread " + req[1] + "    Message received : " + requestStr);
+			System.out.println("=> In server thread " + req[1] + "  request : " + requestStr);
 
 			// Writer :
 			if (req[0].equalsIgnoreCase("Write")) {
@@ -34,18 +34,18 @@ public class ServerListener extends Thread {
 				int newVal = Integer.parseInt(req[2]);
 
 				// sleep
-				System.out.println("=> thread " + req[1] + "    thread will sleep");
+				System.out.println("=> In server thread " + req[1] + " will sleep");
 				try {
 					Thread.sleep((long) (Math.random() * 1000 * 10));
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				System.out.println("=> thread " + req[1] + "thread will wake up");
+				System.out.println("=> In server thread " + req[1] + " will wake up");
 
 				// write new value
 				sSeq = serverInst.writeVal(newVal, wID);
 
-				// Reply to the request with the rSeq and sSeq
+				// write the response into socket output file
 				PrintWriter wtr = new PrintWriter(socket.getOutputStream(), true);
 				wtr.println(String.format("%-10s %-10s%n", rSeq, sSeq));
 			}
@@ -56,31 +56,28 @@ public class ServerListener extends Thread {
 				int rID = Integer.parseInt(req[1]);
 
 				// sleep
-				System.out.println("=> thread " + req[1] + "thread will sleep");
+				System.out.println("=> In server thread " + req[1] + " will sleep");
 				try {
 					Thread.sleep((long) (Math.random() * 1000 * 10));
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				System.out.println("=> thread " + req[1] + "thread  will wake up");
+				System.out.println("=> In server thread " + req[1] + " will wake up");
 
+				// read oVal and sSeq
 				Server.status st = serverInst.readVal(rID);
 				sSeq = st.getServSeq();
 				int oVal = st.getVal();
 
-				// Reply to the request with the sSeq and the value
+				// write the response into socket output file
 				PrintWriter wtr = new PrintWriter(socket.getOutputStream(), true);
 				wtr.println(String.format("%-10s %-10s %-10s%n", rSeq, sSeq, oVal));
 
 				// decrease number of readers
 				serverInst.decReadersNum();
-
 			}
-
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 	}
-
 }
