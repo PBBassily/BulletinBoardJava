@@ -24,8 +24,9 @@ public class ServerListener extends Thread {
 			// Parse request
 			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			String requestStr = reader.readLine();
-			System.out.println("Message received : " + requestStr);
 			String[] req = requestStr.split("\\s", -1);
+
+			System.out.println("=> thread " + req[1] + "    Message received : " + requestStr);
 
 			// Writer :
 			if (req[0].equalsIgnoreCase("Write")) {
@@ -33,17 +34,16 @@ public class ServerListener extends Thread {
 				int newVal = Integer.parseInt(req[2]);
 
 				// sleep
-				System.out.println("thread will sleep");
+				System.out.println("=> thread " + req[1] + "    thread will sleep");
 				try {
-					Thread.sleep((long) (Math.random() * 1000));
+					Thread.sleep((long) (Math.random() * 1000 * 10));
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				System.out.println("thread " + wID + " will wake up");
+				System.out.println("=> thread " + req[1] + "thread will wake up");
 
 				// write new value
-				sSeq = serverInst.writeVal(newVal);
-				Server.writers.add(new int[] { sSeq, newVal, wID });
+				sSeq = serverInst.writeVal(newVal, wID);
 
 				// Reply to the request with the rSeq and sSeq
 				PrintWriter wtr = new PrintWriter(socket.getOutputStream(), true);
@@ -56,25 +56,21 @@ public class ServerListener extends Thread {
 				int rID = Integer.parseInt(req[1]);
 
 				// sleep
-				System.out.println("thread will sleep");
+				System.out.println("=> thread " + req[1] + "thread will sleep");
 				try {
-					Thread.sleep((long) (Math.random() * 1000));
+					Thread.sleep((long) (Math.random() * 1000 * 10));
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				System.out.println("thread " + rID + " will wake up");
+				System.out.println("=> thread " + req[1] + "thread  will wake up");
 
-				Server.status st = serverInst.readVal();
+				Server.status st = serverInst.readVal(rID);
 				sSeq = st.getServSeq();
 				int oVal = st.getVal();
-				int rNum = st.getReadersNum();
-
-				Server.readers.add(new int[] { sSeq, oVal, rID, rNum });
 
 				// Reply to the request with the sSeq and the value
 				PrintWriter wtr = new PrintWriter(socket.getOutputStream(), true);
 				wtr.println(String.format("%-10s %-10s %-10s%n", rSeq, sSeq, oVal));
-				// wtr.println(rSeq + "\r\n" + sSeq + "\r\n" + oVal);
 
 				// decrease number of readers
 				serverInst.decReadersNum();

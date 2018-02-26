@@ -1,8 +1,8 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Semaphore;
 
 public class Server {
@@ -10,8 +10,8 @@ public class Server {
 	private Semaphore rNumLock = new Semaphore(1);
 	private Semaphore valLock = new Semaphore(1);
 
-	public static List<int[]> readers = new ArrayList<int[]>();
-	public static List<int[]> writers = new ArrayList<int[]>();
+	private static BufferedWriter readersFile;
+	private static BufferedWriter writersFile;
 
 	private static int sSeq = 0;
 	private static int rNum = 0;
@@ -28,8 +28,8 @@ public class Server {
 		public status(int oVal, int sSeq, int rNum) {
 			this.oVal = oVal;
 			this.sSeq = sSeq;
-			this.rNum= rNum;
-					
+			this.rNum = rNum;
+
 		}
 
 		public int getVal() {
@@ -39,6 +39,7 @@ public class Server {
 		public int getServSeq() {
 			return sSeq;
 		}
+
 		public int getReadersNum() {
 			return rNum;
 		}
@@ -47,7 +48,7 @@ public class Server {
 	/**
 	 * Return status object containing oVal and sSeq
 	 */
-	public status readVal() {
+	public status readVal(int rId) {
 		try {
 			valLock.acquire();
 		} catch (InterruptedException e) {
@@ -55,6 +56,11 @@ public class Server {
 		}
 		int sSeqCopy = ++sSeq;
 		int oValCopy = oVal;
+
+		// write into log file
+		String st = String.format("%-10s %-10s %-10s %-10s%n", sSeqCopy, oValCopy, rId, rNum);
+		writeIntoFile(readersFile, st);
+
 		valLock.release();
 		return new status(oValCopy, sSeqCopy, rNum);
 
@@ -63,7 +69,7 @@ public class Server {
 	/**
 	 * Change the oVal Return sSeq
 	 */
-	public int writeVal(int newVal) {
+	public int writeVal(int newVal, int wId) {
 		try {
 			valLock.acquire();
 		} catch (InterruptedException e) {
@@ -72,11 +78,29 @@ public class Server {
 		oVal = newVal;
 		int sSeqCopy = ++sSeq;
 
+		// write into log file
+		String st = String.format("%-10s %-10s %-10s%n", sSeqCopy, newVal, wId);
+		writeIntoFile(writersFile, st);
+
 		valLock.release();
 		return sSeqCopy;
 
 	}
 
+	/**
+	 * 
+	 * @param fileWriter
+	 * @param st
+	 */
+	public void writeIntoFile(BufferedWriter fileWriter, String st) {
+		try {
+			fileWriter.append(st);
+			fileWriter.flush();
+
+		} catch (IOException e) {
+			System.out.println(e);
+		}
+	}
 
 	/**
 	 * 
@@ -116,29 +140,41 @@ public class Server {
 	 * @param args
 	 * @throws IOException
 	 */
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) {
 
 		Server server = new Server();
 		int serverPortNum = Integer.parseInt(args[0]);
-		System.out.println("port num is "+serverPortNum);
+		System.out.println("port num is " + serverPortNum);
 		int rSeq = 0;
 
 		// start the server
-		ServerSocket serverSocket = new ServerSocket(serverPortNum);
-		System.out.println("server started successfully.");
 
-		// output file
-		// BufferedWriter writer = new BufferedWriter(new FileWriter("output"));
+		try {
+			ServerSocket serverSocket = new ServerSocket(serverPortNum);
 
-		while (true) {
-			System.out.println("waiting for client...");
+			System.out.println("server started successfully.");
 
-			// create new TCP connection
-			Socket clientSocket = serverSocket.accept();
+			// output files
+			readersFile = new BufferedWriter(new FileWriter("Readers") );
+			readersFile.append("Readers\n");
+			readersFile.append(String.format("%-10s %-10s %-10s %-10s%n", "sSeq" ,"oVal", "rId" ,"rNum"));
 
-			// start new thread
-			new ServerListener(server, clientSocket, ++rSeq).start();
+			writersFile = new BufferedWriter(new FileWriter("Writers"));
+			writersFile.append("Writers\n");
+			writersFile.append(String.format("%-10s %-10s %-10s%n", "sSeq" ,"oVal", "wId"));
 
+			while (true) {
+				System.out.println("waiting for client...");
+
+				// create new TCP connection
+				Socket clientSocket = serverSocket.accept();
+
+				// start new thread
+				new ServerListener(server, clientSocket, ++rSeq).start();
+
+			}
+		} catch (IOException e) {
+			System.out.println(e);
 		}
 	}
 
