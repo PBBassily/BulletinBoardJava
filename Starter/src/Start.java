@@ -3,49 +3,58 @@
 public class Start {
 		
 	public static void main (String[] args){
-		Start invoker = new Start ();
-		
-		invoker.start();
-		
+		Start invoker = new Start ();		
+		invoker.execute();	
 	}
+	
+	
+	private void execute() {
 
-	private void start() {
-		SSHChannelCreator sshCreator =  new SSHChannelCreator();
-		String user = "mirna" , password = "mirna123",ip="192.168.1.189",command="./readerScript.sh";
-		
 		PropertiesParser propertiesParser = new PropertiesParser();
 		
-		//setupServer(sshCreator ,propertiesParser);
-		setupClient(sshCreator , propertiesParser , 36,false);
-		for(int i=0 ; i < propertiesParser.getReadersNum() ; i++){
-//			setup client
+		setupServer(propertiesParser);
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		for(int i=0 ; i < propertiesParser.getWritersNum() ; i++){
-//			setup client
+		int i=0;
+		for( ; i < propertiesParser.getReadersNum() ; i++){
+			System.out.println("********"+i);
+			setupClient(propertiesParser , i,true);
+		}
+		for(; i < 2*propertiesParser.getWritersNum() ; i++){
+			System.out.println("********"+i);
+			setupClient(propertiesParser , i,false);
 		}
 		
 	}
 
 
-	private void setupClient(SSHChannelCreator sshChannelCreator ,PropertiesParser propertiesParser, int id , boolean isReader) {
+	private void setupClient(PropertiesParser propertiesParser, int id , boolean isReader) {
 		 
-		String command = "cd BulletinBoard/client/;java Client"
+		String command = "cd Desktop/BulletinBoardJava/Client/src;java Client"
 				+" "+ propertiesParser.getServerIP()
 				+" "+ propertiesParser.getServerPort()
 				+" "+ isReader
 				+" "+ id
 				+" "+ propertiesParser.getAccessNum();
 				
-		System.out.println(command);
-		sshChannelCreator.ssh("user", "pass", "ip", command);
+		String clientIP =isReader? propertiesParser.getReader(id):propertiesParser.getWriter(id-propertiesParser.getReadersNum()) ;   
+		SSHChannelCreator sshChannelCreator = new SSHChannelCreator("mirna", "mirna123",clientIP  , command);
+		sshChannelCreator.start();
+		
+		
+		
 		
 	}
 
-	private void setupServer(SSHChannelCreator sshChannelCreator ,PropertiesParser propertiesParser) {
+	private void setupServer(PropertiesParser propertiesParser) {
 		
-		//String command = "java Server "+propertiesParser.getServerPort();
-		String command = "cd BulletinBoard/server/;java Server "+propertiesParser.getServerPort();
-		sshChannelCreator.ssh("user", "pass", "ip", command);
+		String command = "cd Desktop/BulletinBoardJava/Server/src;java Server "+propertiesParser.getServerPort();
+		SSHChannelCreator sshChannelCreator = new SSHChannelCreator("mirna", "mirna123", propertiesParser.getServerIP() , command);
+		sshChannelCreator.start();
 		
 	}
 
